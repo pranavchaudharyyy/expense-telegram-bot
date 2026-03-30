@@ -1,0 +1,364 @@
+{
+  "name": "Telegram AI Expense Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true
+        }
+      },
+      "id": "f6159f6b-934f-4b43-aebd-4768c9d8599d",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "491a313e-231e-40e6-bb20-648db6fad2a9",
+      "credentials": {
+        "telegramApi": {
+          "id": "PLtBtjqWW6nRDUmO",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a personal expense tracking assistant via Telegram.\n\nCAPABILITIES:\n1. Log Expense: Extract expense data from text or images and log to Google Sheets with fields: Date (YYYY-MM-DD), Vendor, Category, Amount (number), Currency (always USD)\n2. Query Expenses: Retrieve and summarize expense data from Google Sheets to answer user questions\n3. Send High-Value Alert: Send email to pranavchaudharyyyy@gmail.com when logging expenses over $500\n\nINSTRUCTIONS:\n- When user shares expense info (text/image), use \"Log Expense\" tool to save it\n- If logged expense amount > $500, immediately use \"Send High-Value Alert\" tool with recipient=pranavchaudharyyyy@gmail.com, subject=\"High-Value Expense Alert: $[amount]\", and body with expense details\n- When user asks about expenses, use \"Query Expenses\" tool to retrieve data and provide a helpful summary\n- If input is unclear or missing data, ask clarifying questions\n- Always confirm successful logging with a brief message\n- Default currency is USD for all expenses",
+          "maxIterations": 10,
+          "returnIntermediateSteps": false,
+          "passthroughBinaryImages": true
+        }
+      },
+      "id": "ab83175d-e937-4340-9bd4-f67ce60adcf0",
+      "name": "Expense Assistant Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        880,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "maxOutputTokens": 4000,
+          "temperature": 0.4
+        }
+      },
+      "id": "1ee8e5a5-623d-4546-a72b-b3a2d2ec5538",
+      "name": "Google Gemini 2.5 Flash",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        688,
+        528
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "5u9wdZyHsI1mvAaI",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "a32adc05-664d-482d-a70d-7ecdbadf13c5",
+      "name": "Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        816,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Logs an expense to Google Sheets. Use when user provides expense details. Provide data as: Date (YYYY-MM-DD format), Vendor (string), Category (string like Food, Transport, Entertainment), Amount (number only, no currency symbols), Currency (always USD).",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1c8RlSpK3HCPJjjoA0snW1bkJRI4hP5bOuI1HkXYKneo",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Expenses",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "7b34e253-a7f3-4dc3-896e-19886f65d333",
+      "name": "Log Expense",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        944,
+        528
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wQGHnwgbsvHQ7W4z",
+          "name": "Latest"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1c8RlSpK3HCPJjjoA0snW1bkJRI4hP5bOuI1HkXYKneo",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Expenses",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "9c9a70fb-193d-447f-b3f3-9601904e7069",
+      "name": "Query Expenses",
+      "type": "n8n-nodes-base.googleSheetsTool",
+      "typeVersion": 4.7,
+      "position": [
+        1072,
+        528
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "wWiaQT7oF6joSK0H",
+          "name": "Latest"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Sends high-value expense alert email to pranavchaudharyyyy@gmail.com. Use when expense amount exceeds $500. Include expense details in subject and body.",
+        "sendTo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('recipient', 'Email recipient - always use: pranavchaudharyyyy@gmail.com') }}",
+        "subject": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('subject', 'Email subject with expense amount (e.g., High-Value Expense Alert: $750)') }}",
+        "emailType": "text",
+        "message": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('body', 'Email body with expense details: vendor, date, amount, category') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "f4756359-e57f-4a0d-aa23-d5cdbe7531cc",
+      "name": "Send High-Value Alert",
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        528
+      ],
+      "webhookId": "9eeb6141-9d99-4bac-b8ea-8f9eb5b07aa5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "CguT7myZjtsnaLJz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $(\"Telegram Trigger\").item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "8325f2d5-24bf-4497-8404-ec62518cd237",
+      "name": "Send Telegram Response",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1408,
+        304
+      ],
+      "webhookId": "a08c2ec7-f45e-498d-956f-a546d827f337",
+      "credentials": {
+        "telegramApi": {
+          "id": "PLtBtjqWW6nRDUmO",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "googleSheetId",
+              "value": "1c8RlSpK3HCPJjjoA0snW1bkJRI4hP5bOuI1HkXYKneo",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "googleSheetName",
+              "value": "Expenses",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "alertEmail",
+              "value": "pranavchaudharyyyy@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "highValueThreshold",
+              "value": 500,
+              "type": "number"
+            },
+            {
+              "id": "5",
+              "name": "chatInput",
+              "value": "={{ $json.message.text || ($json.message.photo && $json.message.photo.length > 0 ? \"Process this expense from the image\" : \"Process this expense\") }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "sessionId",
+              "value": "={{ $json.message.chat.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "89362512-e96a-4f0a-aecb-fc5f53deb650",
+      "name": "Workflow Configuration",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        464,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Workflow Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Expense Assistant Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini 2.5 Flash": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Expense Assistant Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Expense Assistant Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Expense": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expense Assistant Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Expenses": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expense Assistant Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send High-Value Alert": {
+      "ai_tool": [
+        [
+          {
+            "node": "Expense Assistant Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Workflow Configuration": {
+      "main": [
+        [
+          {
+            "node": "Expense Assistant Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "fdc394b0-c270-45ac-8d3f-7bdbd4584d83",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ee4c93f21fa416e845ca91b64789110e0a8d7a3e8bd78d3920b62ff3438e916d"
+  },
+  "id": "kPegrsINuxaKnQFH",
+  "tags": []
+}
